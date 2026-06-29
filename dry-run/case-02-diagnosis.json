@@ -1,0 +1,59 @@
+{
+  "case_id": "case-02",
+  "timeline": [
+    {
+      "time": "15:18",
+      "event": "Adapter-PAY-01 触发告警：第三方支付网关超时 (P1)"
+    },
+    {
+      "time": "15:22",
+      "event": "Adapter-PAY-01 触发告警：第三方支付成功率下降 (P2)"
+    },
+    {
+      "time": "15:25",
+      "event": "CBS-SH-01 触发告警：上游充值请求失败率升高 (P3)"
+    }
+  ],
+  "anomaly_cluster": [
+    {
+      "object_id": "Adapter-PAY-01",
+      "error_code": "7001",
+      "count": 1850,
+      "pct": 62.5
+    },
+    {
+      "object_id": "Adapter-PAY-01",
+      "error_code": "7002",
+      "count": 720,
+      "pct": 24.3
+    }
+  ],
+  "top3_root_cause": [
+    {
+      "rank": 1,
+      "candidate": "第三方支付网关 GW-PAY-EXT 发生网络延迟或不可用，导致 Adapter-PAY-01 调用超时",
+      "evidence_refs": ["Evidence A", "Evidence B", "Evidence C", "Evidence D"],
+      "confidence": "high"
+    },
+    {
+      "rank": 2,
+      "candidate": "第三方支付网关 GW-PAY-EXT 触发风控策略拒绝部分请求",
+      "evidence_refs": ["Evidence A", "Evidence D"],
+      "confidence": "medium"
+    },
+    {
+      "rank": 3,
+      "candidate": "Adapter-PAY-01 内部配置错误导致超时阈值设置不当",
+      "evidence_refs": ["Evidence B"],
+      "confidence": "low"
+    }
+  ],
+  "evidence_matrix": {
+    "Evidence A": "支持根因 1 和根因 2，告警时间线显示 Adapter-PAY-01 异常先于 CBS 和 OCS，且明确指向第三方支付网关超时。",
+    "Evidence B": "强支持根因 1，Adapter-PAY-01 平均响应时间飙升至 8500ms（基线 320ms），超时错误率 52.3%，而 OCS 指标正常，排除 OCS 故障。",
+    "Evidence C": "支持根因 1 和根因 2，拓扑显示故障点位于 Adapter-PAY-01 与外部网关 GW-PAY-EXT 之间，且 OCS 处于正常链路中。",
+    "Evidence D": "强支持根因 1（62.5% 超时）和根因 2（24.3% 拒绝），OCS 错误码为 0，彻底排除 OCS 是故障源。"
+  },
+  "recommend": "推荐根因 1：第三方支付网关 GW-PAY-EXT 发生网络延迟或不可用。建议立即联系第三方支付网关供应商确认 GW-PAY-EXT 状态及网络连通性，并检查 Adapter-PAY-01 的超时日志。",
+  "confidence": "high"
+}

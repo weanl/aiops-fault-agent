@@ -1,0 +1,63 @@
+case_id: case-02
+case_name: Adapter 第三方支付网关超时
+time_window: 最近 30 分钟（15:00-15:30）
+scenario: CBS 用户充值失败
+expected_verify: 故障根因在 Adapter-PAY-01（第三方支付网关），验证 9B 不会泛化错归到 OCS
+
+evidence:
+  - label: Evidence A
+    type: Alarm
+    description: 时间窗口内的告警快照（已从告警系统查询完成）。
+    columns: [告警ID, 时间, 对象, 类型, 等级]
+    rows:
+      - {告警ID: "ALM-2026-0628-101", 时间: "15:18", 对象: "Adapter-PAY-01", 类型: "第三方支付网关超时", 等级: "P1"}
+      - {告警ID: "ALM-2026-0628-102", 时间: "15:22", 对象: "Adapter-PAY-01", 类型: "第三方支付成功率下降", 等级: "P2"}
+      - {告警ID: "ALM-2026-0628-103", 时间: "15:25", 对象: "CBS-SH-01", 类型: "上游充值请求失败率升高", 等级: "P3"}
+    notes: |
+      ALM-2026-0628-101 触发时间 15:18，先于 OCS 任何异常
+
+  - label: Evidence B
+    type: KPI
+    description: 相关网元的 KPI 快照（已从监控系统查询完成）。
+    columns: [对象, 指标, 数值, 单位, 时间]
+    rows:
+      - {对象: "Adapter-PAY-01", 指标: "第三方支付成功率", 数值: 45.2, 单位: "%", 时间: "15:30"}
+      - {对象: "Adapter-PAY-01", 指标: "平均响应时间", 数值: 8500, 单位: "ms", 时间: "15:30"}
+      - {对象: "Adapter-PAY-01", 指标: "超时错误率", 数值: 52.3, 单位: "%", 时间: "15:30"}
+      - {对象: "OCS-BJ-02", 指标: "连接池使用率", 数值: 68.0, 单位: "%", 时间: "15:30"}
+      - {对象: "OCS-BJ-02", 指标: "平均响应时间", 数值: 95, 单位: "ms", 时间: "15:30"}
+      - {对象: "OCS-BJ-02", 指标: "错误率", 数值: 0.4, 单位: "%", 时间: "15:30"}
+      - {对象: "CBS-SH-01", 指标: "充值成功率", 数值: 78.5, 单位: "%", 时间: "15:30"}
+    notes: |
+      Adapter-PAY-01 响应时间从基线 320ms 升至 8500ms（25 倍）
+      OCS-BJ-02 各项指标均在正常范围内（连接池使用率基线 65%，当前 68%）
+
+  - label: Evidence C
+    type: Topology
+    description: 相关网元的拓扑关系（已从 CMDB 查询完成）。
+    graph: |
+      CBS-SH-01 (充值入口) → OCS-BJ-02 (在线计费) → Adapter-PAY-01 (第三方支付)
+    objects:
+      - {id: "CBS-SH-01", role: "充值入口网关"}
+      - {id: "OCS-BJ-02", role: "在线计费系统（北京节点）"}
+      - {id: "Adapter-PAY-01", role: "第三方支付适配器（依赖第三方支付网关 GW-PAY-EXT）"}
+    notes: |
+      充值请求路径：CBS-SH-01 → OCS-BJ-02 → Adapter-PAY-01 → GW-PAY-EXT（外部）
+      Adapter-PAY-01 调用外部第三方支付网关 GW-PAY-EXT
+      本次异常点在 Adapter-PAY-01 与 GW-PAY-EXT 之间
+
+  - label: Evidence D
+    type: Error Statistics
+    description: 错误码分布统计（已从日志系统查询完成）。
+    columns: [错误码, 次数, 占比, 主要对象]
+    rows:
+      - {错误码: "7001", 次数: 1850, 占比: 62.5, 主要对象: "Adapter-PAY-01"}
+      - {错误码: "7002", 次数: 720, 占比: 24.3, 主要对象: "Adapter-PAY-01"}
+      - {错误码: "5004", 次数: 0, 占比: 0.0, 主要对象: "OCS-BJ-02"}
+      - {错误码: "5005", 次数: 0, 占比: 0.0, 主要对象: "OCS-BJ-02"}
+    notes: |
+      错误码 7001：第三方支付网关响应超时
+      错误码 7002：第三方支付网关拒绝（可能是风控）
+      错误码 5004/5005：OCS 错误码（本次未出现）
+      错误码 7001/7002 集中在 Adapter-PAY-01，与 OCS-BJ-02 无关
+      OCS-BJ-02 错误码 5004/5005 占比 0%，可确认 OCS 不是本次故障点

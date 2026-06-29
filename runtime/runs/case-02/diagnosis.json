@@ -1,0 +1,86 @@
+{
+  "diagnosis": {
+    "case_id": "case-02",
+    "timeline": [
+      {
+        "time": "15:18",
+        "event": "Adapter-PAY-01 触发告警：第三方支付网关超时 (P1)"
+      },
+      {
+        "time": "15:22",
+        "event": "Adapter-PAY-01 触发告警：第三方支付成功率下降 (P2)"
+      },
+      {
+        "time": "15:25",
+        "event": "CBS-SH-01 触发告警：上游充值请求失败率升高 (P3)"
+      }
+    ],
+    "anomaly_cluster": [
+      {
+        "object_id": "Adapter-PAY-01",
+        "error_code": "7001",
+        "count": 1850,
+        "pct": 62.5
+      },
+      {
+        "object_id": "Adapter-PAY-01",
+        "error_code": "7002",
+        "count": 720,
+        "pct": 24.3
+      }
+    ],
+    "top3_root_cause": [
+      {
+        "rank": 1,
+        "candidate": "第三方支付网关 GW-PAY-EXT 响应超时或不可用，导致 Adapter-PAY-01 返回 7001 超时错误",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence B",
+          "Evidence C",
+          "Evidence D"
+        ],
+        "confidence": "high"
+      },
+      {
+        "rank": 2,
+        "candidate": "第三方支付网关 GW-PAY-EXT 触发风控策略拒绝请求，导致 Adapter-PAY-01 返回 7002 拒绝错误",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence D"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "rank": 3,
+        "candidate": "Adapter-PAY-01 内部连接池耗尽或网络抖动导致无法连接外部网关",
+        "evidence_refs": [
+          "Evidence B",
+          "Evidence C"
+        ],
+        "confidence": "low"
+      }
+    ],
+    "evidence_matrix": {
+      "Evidence A": "告警时间线显示 Adapter-PAY-01 的超时和成功率下降先于 CBS 侧告警，定位故障点在 Adapter-PAY-01 及其上游外部网关",
+      "Evidence B": "KPI 数据显示 Adapter-PAY-01 平均响应时间飙升至 8500ms（基线 320ms），超时错误率达 52.3%，而 OCS 指标正常，排除 OCS 故障",
+      "Evidence C": "拓扑图确认请求路径为 CBS -> OCS -> Adapter-PAY-01 -> GW-PAY-EXT，异常发生在 Adapter 与外部网关之间",
+      "Evidence D": "错误码统计显示 7001（超时）和 7002（拒绝）集中在 Adapter-PAY-01，OCS 无相关错误码，确证故障源为外部支付网关"
+    },
+    "recommend": "高置信候选根因为外部支付网关超时或风控拒绝。建议优先检查第三方支付网关 GW-PAY-EXT 的状态、网络连通性及风控策略日志，验证其是否出现大规模超时或拒绝流量。",
+    "confidence": "high"
+  },
+  "runner_meta": {
+    "model": "qwen3.5-9b-gptq4",
+    "elapsed_seconds": 11.57,
+    "usage": {
+      "prompt_tokens": 2264,
+      "total_tokens": 2996,
+      "completion_tokens": 732,
+      "prompt_tokens_details": null
+    },
+    "token_budget": 4000,
+    "token_budget_check": "prompt_tokens=2264 within budget=4000",
+    "thinking_disabled": true,
+    "tool_call_disabled": true
+  }
+}

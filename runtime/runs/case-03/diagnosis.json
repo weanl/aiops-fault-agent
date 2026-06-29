@@ -1,0 +1,98 @@
+{
+  "diagnosis": {
+    "case_id": "case-03",
+    "timeline": [
+      {
+        "time": "16:12",
+        "event": "CBS-SH-01 触发告警：充值错误率轻微波动 (P3)"
+      },
+      {
+        "time": "16:18",
+        "event": "OCS-BJ-02 触发告警：充值错误率轻微波动 (P3)"
+      },
+      {
+        "time": "16:24",
+        "event": "Adapter-PAY-01 触发告警：第三方支付响应时间波动 (P3)"
+      }
+    ],
+    "anomaly_cluster": [
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5004",
+        "count": 85,
+        "pct": 28.5
+      },
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5005",
+        "count": 42,
+        "pct": 14.1
+      },
+      {
+        "object_id": "Adapter-PAY-01",
+        "error_code": "7001",
+        "count": 78,
+        "pct": 26.2
+      },
+      {
+        "object_id": "Adapter-PAY-01",
+        "error_code": "7002",
+        "count": 93,
+        "pct": 31.2
+      }
+    ],
+    "top3_root_cause": [
+      {
+        "rank": 1,
+        "candidate": "OCS-BJ-02 连接池资源紧张导致部分请求超时 (5004) 及数据库写入超时 (5005)",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence B",
+          "Evidence D"
+        ],
+        "confidence": "low"
+      },
+      {
+        "rank": 2,
+        "candidate": "Adapter-PAY-01 第三方支付网关响应延迟或拒绝导致请求失败 (7001/7002)",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence B",
+          "Evidence D"
+        ],
+        "confidence": "low"
+      },
+      {
+        "rank": 3,
+        "candidate": "CBS-SH-01 至 OCS-BJ-02 链路存在间歇性抖动，但 KPI 未显示严重阻塞",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence B"
+        ],
+        "confidence": "low"
+      }
+    ],
+    "evidence_matrix": {
+      "Evidence A": "告警分散且等级均为 P3，无明确先后因果，无法定位单一故障点",
+      "Evidence B": "所有对象 KPI 均在正常阈值内波动，无 P0/P1/P2 级别的性能瓶颈指标",
+      "Evidence C": "拓扑结构正常，无法解释为何错误码在两个不同对象中均匀分布",
+      "Evidence D": "错误码在 OCS 和 Adapter 之间均匀分布，无单一主导错误码，无法直接判定根因对象"
+    },
+    "recommend": "由于错误码在 OCS-BJ-02 和 Adapter-PAY-01 之间均匀分布，且所有 KPI 指标均在正常范围内波动，当前证据不足以支撑高置信度的根因判断。建议进一步收集该时间窗口内的详细链路追踪日志（Trace Log）和数据库慢查询日志，以区分是 OCS 内部资源竞争还是下游支付网关的随机抖动。",
+    "confidence": "INSUFFICIENT_EVIDENCE"
+  },
+  "runner_meta": {
+    "model": "qwen3.5-9b-gptq4",
+    "elapsed_seconds": 12.4,
+    "usage": {
+      "prompt_tokens": 2214,
+      "total_tokens": 3000,
+      "completion_tokens": 786,
+      "prompt_tokens_details": null
+    },
+    "token_budget": 4000,
+    "token_budget_check": "prompt_tokens=2214 within budget=4000",
+    "thinking_disabled": true,
+    "tool_call_disabled": true
+  }
+}

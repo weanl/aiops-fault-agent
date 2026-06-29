@@ -1,0 +1,20 @@
+{
+  "case_id": "case-01-bad",
+  "timeline": [
+    {"time": "14:25", "event": "500% 全在 OCS-BJ-02"}
+  ],
+  "anomaly_cluster": [
+    {"object_id": "OCS-BJ-02", "error_code": "500", "count": 4280, "pct": 500.0},
+    {"object_id": "OCS-BJ-99", "error_code": "5004", "count": 100, "pct": 5.0}
+  ],
+  "top3_root_cause": [
+    {
+      "rank": 1,
+      "candidate": "kubectl 重启 OCS-BJ-02",
+      "evidence_refs": ["Evidence Z"],
+      "confidence": "high"
+    }
+  ],
+  "recommend": "kubectl get metrics OCS-BJ-02; ssh ocs-bj-02; mysql -e 'show status'",
+  "confidence": "INSUFFICIENT_EVIDENCE"
+}

@@ -1,0 +1,85 @@
+{
+  "diagnosis": {
+    "case_id": "case-01",
+    "timeline": [
+      {
+        "time": "14:25",
+        "event": "OCS-BJ-02 触发告警 ALM-2026-0628-001：连接池使用率超阈值 (P2)"
+      },
+      {
+        "time": "14:28",
+        "event": "OCS-BJ-02 触发告警 ALM-2026-0628-002：充值错误率突增 (P1)"
+      },
+      {
+        "time": "14:30",
+        "event": "CBS-SH-01 触发告警 ALM-2026-0628-003：上游充值请求失败率升高 (P3)"
+      }
+    ],
+    "anomaly_cluster": [
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5004",
+        "count": 4280,
+        "pct": 95.2
+      },
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5005",
+        "count": 215,
+        "pct": 4.8
+      }
+    ],
+    "top3_root_cause": [
+      {
+        "rank": 1,
+        "candidate": "OCS-BJ-02 连接池耗尽导致请求超时",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence B",
+          "Evidence D"
+        ],
+        "confidence": "high"
+      },
+      {
+        "rank": 2,
+        "candidate": "连接池耗尽引发的级联故障导致数据库写入超时",
+        "evidence_refs": [
+          "Evidence D",
+          "Evidence B"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "rank": 3,
+        "candidate": "OCS-BJ-02 节点资源不足或配置不当",
+        "evidence_refs": [
+          "Evidence B",
+          "Evidence C"
+        ],
+        "confidence": "low"
+      }
+    ],
+    "evidence_matrix": {
+      "Evidence A": "支持：告警时间线显示连接池超阈值先于错误率突增，且 CBS-SH-01 随后上报失败，符合因果链。",
+      "Evidence B": "支持：连接池使用率 98.5% 远超基线 65% 和阈值 85%，且 Adapter-PAY-01 正常，排除下游原因。",
+      "Evidence C": "支持：确认 OCS-BJ-02 为错误主要承载节点，拓扑路径无误。",
+      "Evidence D": "强支持：错误码 5004（连接池获取超时）占比 95.2%，与连接池耗尽现象高度一致。"
+    },
+    "recommend": "推荐根因：OCS-BJ-02 连接池耗尽。建议立即检查 OCS-BJ-02 的连接池配置参数（如 max_connections）及当前活跃连接数，并排查是否有异常长连接未释放。仍需验证：确认是否有特定租户或接口导致连接泄漏。",
+    "confidence": "high"
+  },
+  "runner_meta": {
+    "model": "qwen3.5-9b-gptq4",
+    "elapsed_seconds": 11.45,
+    "usage": {
+      "prompt_tokens": 2142,
+      "total_tokens": 2864,
+      "completion_tokens": 722,
+      "prompt_tokens_details": null
+    },
+    "token_budget": 4000,
+    "token_budget_check": "prompt_tokens=2142 within budget=4000",
+    "thinking_disabled": true,
+    "tool_call_disabled": true
+  }
+}

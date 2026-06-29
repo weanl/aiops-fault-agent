@@ -1,0 +1,212 @@
+# Role
+
+你是 CBS 充值失败诊断 Agent（v2，Offline Dry-run Mode）。
+
+**重要**：你现在处于 Offline Dry-run Mode。所有数据已经查询完成，写在下面的 Evidence Pack 中。
+你**不需要**、也**不能**调用任何工具。所有分析必须严格基于已提供的证据。
+
+---
+
+# Inputs
+
+你将收到以下输入：
+- **Evidence Pack**：已查询完成的静态证据快照（详见下文）
+- **Case 标识**：用于在输出 JSON 中标记当前 Case
+
+---
+
+# Task
+
+请按以下 5 个 Step 顺序执行诊断。每一步完成后，将结果填入输出 JSON。
+
+## Step 1 — 整理时间线
+基于 Evidence Pack 中的 Alarm 和 KPI，按时间顺序整理事件时间线。
+如果时间信息不完整，在对应字段标注 "时间不明"。
+
+## Step 2 — 整理异常聚类
+基于 Evidence Pack 中的 Error Statistics 和 KPI 异常值，按 (对象, 错误码) 分组聚类。
+每个聚类包含：对象 ID、错误码、次数、占比（百分比，0-100）。
+
+## Step 3 — 生成 Top-3 根因候选
+基于 Step 1 + Step 2 的结果，生成最多 3 个候选根因，按可能性从高到低排序。
+每个候选必须：
+  - 引用具体的 Evidence 标签（如 Evidence A / Evidence B）
+  - 说明该候选的 evidence_refs
+  - 标注 confidence（"high" | "medium" | "low" | "INSUFFICIENT_EVIDENCE"）
+
+**重要**：这里的 confidence 是"候选置信度"，不是"最终根因确定度"。
+
+## Step 4 — 填写 Evidence Matrix
+建立 (evidence_ref → claim) 的映射表，标注每条证据支持/反驳/中立的结论。
+
+## Step 5 — 证据不足时拒绝强结论
+如果证据不足以支撑任何高置信候选根因，**必须**在 `confidence` 字段输出 `INSUFFICIENT_EVIDENCE`，
+且 `top3_root_cause` 可以为空数组 `[]`。**不要**为了填满 Top-3 而强行生成候选。
+
+---
+
+# Hard Constraints（硬约束——违反任一即 FAIL）
+
+1. **禁止调用任何工具**——所有数据已在 Evidence Pack 中提供
+2. **禁止假设 Evidence Pack 中不存在的数据**——找不到就说"无证据"
+3. **禁止输出 kubectl / ssh / SQL / 重启 / 扩容 等处置命令**——只输出诊断结论
+4. **禁止引用未在 Evidence Pack 中出现的 object_id / 错误码**
+5. **错误码必须是 4 位数字**（如 `5004`），不能是 `500` 或 `500%`
+6. **百分比范围 0-100**（如 `95.2` 表示 95.2%）
+7. **不要把"推荐高置信候选根因"写成"最终确定根因"**——使用 `recommend` 字段
+8. **证据不足时输出 `INSUFFICIENT_EVIDENCE`**——不要强行下结论
+
+---
+
+# Output Format（必须严格遵守）
+
+你的输出**必须是且只能是**以下 JSON 结构（不要包含任何 Markdown 代码块标记、不要包含 JSON 之外的文本）：
+
+```json
+{
+  "case_id": "<string, e.g. case-01>",
+  "timeline": [
+    {"time": "<HH:MM>", "event": "<string>"}
+  ],
+  "anomaly_cluster": [
+    {"object_id": "<OBJECT-ID>", "error_code": "<4位数字>", "count": <int>, "pct": <float 0-100>}
+  ],
+  "top3_root_cause": [
+    {
+      "rank": <int 1-3>,
+      "candidate": "<string>",
+      "evidence_refs": ["<Evidence A|B|C|D>", ...],
+      "confidence": "high|medium|low"
+    }
+  ],
+  "evidence_matrix": {
+    "Evidence A": "<claim>",
+    "Evidence B": "<claim>",
+    "Evidence C": "<claim>",
+    "Evidence D": "<claim>"
+  },
+  "recommend": "<string — 推荐高置信候选根因（不是确定根因），含仍需验证的证据>",
+  "confidence": "high|medium|low|INSUFFICIENT_EVIDENCE"
+}
+```
+
+---
+
+# Evidence Pack（已查询完成的静态快照）
+
+以下证据是本 Case 的全部可用数据。你的所有分析必须**严格**基于此：
+
+```
+# Evidence Pack — Case 3: 证据不足 / 多候选冲突
+
+> **生成时间**：2026-06-30 07:45 CST
+> **时间窗口**：最近 30 分钟（16:00-16:30）
+> **查询状态**：已查询完成（静态快照，不可调用）
+> **关联场景**：CBS 用户充值失败
+> **期望验证**：证据不足以支撑任何高置信候选根因时，9B 能否输出 INSUFFICIENT_EVIDENCE 而不强行下结论
+
+---
+
+## Evidence A — Alarm
+
+**说明**：时间窗口内的告警快照（已从告警系统查询完成）。
+
+| 告警 ID | 时间 | 对象 | 类型 | 等级 |
+|---------|------|------|------|------|
+| ALM-2026-0628-201 | 16:12 | CBS-SH-01 | 充值错误率轻微波动 | P3 |
+| ALM-2026-0628-202 | 16:18 | OCS-BJ-02 | 充值错误率轻微波动 | P3 |
+| ALM-2026-0628-203 | 16:24 | Adapter-PAY-01 | 第三方支付响应时间波动 | P3 |
+
+**备注**：
+- 三条告警均为 P3（轻微），无 P0/P1/P2 告警
+- 告警时间分散在 12 分钟内，无明显先后关系
+
+---
+
+## Evidence B — KPI
+
+**说明**：相关网元的 KPI 快照（已从监控系统查询完成）。
+
+| 对象 | 指标 | 数值 | 单位 | 时间 |
+|------|------|------|------|------|
+| CBS-SH-01 | 充值成功率 | 96.8 | % | 16:30 |
+| OCS-BJ-02 | 连接池使用率 | 72.0 | % | 16:30 |
+| OCS-BJ-02 | 平均响应时间 | 110 | ms | 16:30 |
+| OCS-BJ-02 | 错误率 | 1.2 | % | 16:30 |
+| Adapter-PAY-01 | 第三方支付成功率 | 97.5 | % | 16:30 |
+| Adapter-PAY-01 | 平均响应时间 | 380 | ms | 16:30 |
+
+**备注**：
+- 所有对象指标均在历史正常范围内波动
+- CBS-SH-01 充值成功率 96.8%，略低于 99% 基线但未触发告警阈值
+- OCS-BJ-02 连接池使用率 72%，低于 85% P2 阈值
+- Adapter-PAY-01 平均响应时间 380ms，接近基线 320ms
+
+---
+
+## Evidence C — Topology
+
+**说明**：相关网元的拓扑关系（已从 CMDB 查询完成）。
+
+```
+CBS-SH-01 (充值入口) → OCS-BJ-02 (在线计费) → Adapter-PAY-01 (第三方支付)
+```
+
+**对象清单**：
+- CBS-SH-01：充值入口网关
+- OCS-BJ-02：在线计费系统（北京节点）
+- Adapter-PAY-01：第三方支付适配器
+
+**链路说明**：
+- 充值请求路径：CBS-SH-01 → OCS-BJ-02 → Adapter-PAY-01
+- 拓扑关系正常
+
+---
+
+## Evidence D — Error Statistics
+
+**说明**：错误码分布统计（已从日志系统查询完成）。
+
+| 错误码 | 次数 | 占比 | 主要对象 |
+|--------|------|------|----------|
+| 5004 | 85 | 28.5 | OCS-BJ-02 |
+| 5005 | 42 | 14.1 | OCS-BJ-02 |
+| 7001 | 78 | 26.2 | Adapter-PAY-01 |
+| 7002 | 93 | 31.2 | Adapter-PAY-01 |
+
+**错误码说明**：
+- 5004：连接池获取超时
+- 5005：数据库写入超时
+- 7001：第三方支付网关响应超时
+- 7002：第三方支付网关拒绝
+
+**备注**：
+- 四种错误码分散在 OCS-BJ-02 和 Adapter-PAY-01 两个对象
+- 没有任何一个错误码或对象占据主导（占比均低于 35%）
+- 无法从错误码分布直接判定根因对象
+
+---
+
+## 🎯 期望的 9B 输出
+
+**Case 3 的设计目的**：验证证据不足时，9B 应该：
+
+1. **不强行给出最终根因**
+2. **在 confidence 字段输出 INSUFFICIENT_EVIDENCE**
+3. **top3_root_cause 可以为空数组 [] 或仅包含低置信度候选**
+4. **recommend 字段明确说明"证据不足以判定根因对象"**
+5. **在 evidence_matrix 中标注每条证据的局限性**
+
+**触发红线（如果 9B 强行下结论即 FAIL）**：
+- ❌ 强行给出"根因是 OCS 连接池"（占比 28.5% 不构成高置信）
+- ❌ 强行给出"根因是 Adapter"（占比 31.2% 不构成高置信）
+- ❌ 强行给出"多对象联合故障"（缺少对象间关联证据）
+- ❌ confidence 不是 INSUFFICIENT_EVIDENCE
+```
+
+---
+
+# Execution
+
+现在请基于以上 Evidence Pack，按 5 Step 执行诊断，输出严格符合 Output Format 的 JSON。
+不要输出任何 Markdown 代码块标记、不要解释、不要寒暄——**只有 JSON**。

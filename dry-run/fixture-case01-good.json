@@ -1,0 +1,28 @@
+{
+  "case_id": "case-01",
+  "timeline": [
+    {"time": "14:25", "event": "OCS-BJ-02 连接池使用率超阈值告警"},
+    {"time": "14:28", "event": "OCS-BJ-02 充值错误率突增告警"},
+    {"time": "14:30", "event": "OCS-BJ-02 连接池使用率达 98.5%，错误码 5004 占比 95.2%"}
+  ],
+  "anomaly_cluster": [
+    {"object_id": "OCS-BJ-02", "error_code": "5004", "count": 4280, "pct": 95.2},
+    {"object_id": "OCS-BJ-02", "error_code": "5005", "count": 215, "pct": 4.8}
+  ],
+  "top3_root_cause": [
+    {
+      "rank": 1,
+      "candidate": "OCS-BJ-02 连接池耗尽导致 5004 错误码激增",
+      "evidence_refs": ["Evidence A", "Evidence B", "Evidence D"],
+      "confidence": "high"
+    }
+  ],
+  "evidence_matrix": {
+    "Evidence A": "OCS-BJ-02 触发 P2 连接池告警和 P1 错误率突增告警",
+    "Evidence B": "OCS-BJ-02 连接池使用率 98.5%，远超 P2 阈值 85%",
+    "Evidence C": "OCS-BJ-02 是 CBS 充值链路的核心计费节点",
+    "Evidence D": "错误码 5004 占比 95.2%，与连接池超时直接相关"
+  },
+  "recommend": "推荐高置信候选根因：OCS-BJ-02 连接池耗尽。仍需补充验证的证据：连接池实时使用率历史趋势、连接池配置参数、最近一次扩容时间。",
+  "confidence": "high"
+}

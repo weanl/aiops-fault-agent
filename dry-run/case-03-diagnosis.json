@@ -1,0 +1,23 @@
+{
+  "case_id": "case-03",
+  "timeline": [
+    {"time": "16:12", "event": "CBS-SH-01 触发 P3 告警：充值错误率轻微波动"},
+    {"time": "16:18", "event": "OCS-BJ-02 触发 P3 告警：充值错误率轻微波动"},
+    {"time": "16:24", "event": "Adapter-PAY-01 触发 P3 告警：第三方支付响应时间波动"}
+  ],
+  "anomaly_cluster": [
+    {"object_id": "OCS-BJ-02", "error_code": "5004", "count": 85, "pct": 28.5},
+    {"object_id": "OCS-BJ-02", "error_code": "5005", "count": 42, "pct": 14.1},
+    {"object_id": "Adapter-PAY-01", "error_code": "7001", "count": 78, "pct": 26.2},
+    {"object_id": "Adapter-PAY-01", "error_code": "7002", "count": 93, "pct": 31.2}
+  ],
+  "top3_root_cause": [],
+  "evidence_matrix": {
+    "Evidence A": "告警等级均为 P3（轻微），且时间分散无先后关系，无法指向单一根因对象",
+    "Evidence B": "所有对象 KPI 均在历史正常范围内波动，无 P0/P1/P2 阈值突破，无法确认性能瓶颈",
+    "Evidence C": "拓扑关系正常，但缺乏对象间延迟或丢包的关联证据，无法判断故障传播路径",
+    "Evidence D": "错误码分散在两个对象且占比均低于 35%，无主导错误码，无法直接判定根因"
+  },
+  "recommend": "当前证据不足以判定根因对象。错误码分布分散且告警等级轻微，建议进一步收集对象间关联日志或全链路追踪数据。",
+  "confidence": "INSUFFICIENT_EVIDENCE"
+}

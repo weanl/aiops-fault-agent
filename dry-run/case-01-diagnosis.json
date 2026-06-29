@@ -1,0 +1,40 @@
+{
+  "case_id": "case-01",
+  "timeline": [
+    {"time": "14:25", "event": "OCS-BJ-02 触发告警 ALM-2026-0628-001：连接池使用率超阈值 (P2)"},
+    {"time": "14:28", "event": "OCS-BJ-02 触发告警 ALM-2026-0628-002：充值错误率突增 (P1)，错误率从 0.3% 升至 8.7%"},
+    {"time": "14:30", "event": "CBS-SH-01 触发告警 ALM-2026-0628-003：上游充值请求失败率升高 (P3)"}
+  ],
+  "anomaly_cluster": [
+    {"object_id": "OCS-BJ-02", "error_code": "5004", "count": 4280, "pct": 95.2},
+    {"object_id": "OCS-BJ-02", "error_code": "5005", "count": 215, "pct": 4.8}
+  ],
+  "top3_root_cause": [
+    {
+      "rank": 1,
+      "candidate": "OCS-BJ-02 连接池耗尽导致请求超时",
+      "evidence_refs": ["Evidence A", "Evidence B", "Evidence D"],
+      "confidence": "high"
+    },
+    {
+      "rank": 2,
+      "candidate": "连接池耗尽引发的数据库写入堆积导致次生超时",
+      "evidence_refs": ["Evidence D", "Evidence B"],
+      "confidence": "medium"
+    },
+    {
+      "rank": 3,
+      "candidate": "CBS-SH-01 上游流量突发导致下游过载",
+      "evidence_refs": ["Evidence A", "Evidence C"],
+      "confidence": "low"
+    }
+  ],
+  "evidence_matrix": {
+    "Evidence A": "支持根因 1 和根因 3。告警时间线显示连接池超阈值先于错误率突增，且 CBS-SH-01 随后上报失败，符合因果链。",
+    "Evidence B": "强支持根因 1。连接池使用率 98.5% 远超基线 65% 和阈值 85%，且 Adapter-PAY-01 正常，排除第三方支付问题。",
+    "Evidence C": "支持根因 3 的流量来源假设，但 OCS-BJ-02 是主要承载节点，拓扑显示其为瓶颈点。",
+    "Evidence D": "强支持根因 1。错误码 5004（连接池获取超时）占比 95.2%，与连接池使用率 98.5% 高度吻合。"
+  },
+  "recommend": "推荐根因 1：OCS-BJ-02 连接池耗尽。需验证当前连接池配置是否匹配当前 TPS (120 req/s) 及峰值需求，并检查是否存在长连接未释放或连接泄漏。",
+  "confidence": "high"
+}
