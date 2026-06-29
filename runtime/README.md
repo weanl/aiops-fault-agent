@@ -201,6 +201,88 @@ python3 runtime/report/report_renderer.py \
 
 ---
 
+## 🧪 CI / Local E2E Test
+
+### CI（云端 hosted runner）
+
+GitHub Actions 跑 **deterministic 回归护栏**（不调 9B / 不连 vLLM）：
+
+```yaml
+# .github/workflows/runtime-check.yml
+on: push / pull_request
+runs-on: ubuntu-latest
+- python runtime/tests/test_deterministic.py
+```
+
+**CI 覆盖**（15 项）：
+
+| 层级 | 测试 | 说明 |
+|------|------|------|
+| Verifier | good fixture PASS | 正向验证 |
+| Verifier | bad fixture FAIL | 反向验证 |
+| Verifier | v1 badcase 拦截 ≥ 4 类 | 500%/500 错误码 + kubectl 越界 |
+| Verifier | confidence 矛盾检测 | INSUFFICIENT_EVIDENCE + high 候选 |
+| Evidence Builder | 3 case YAML --validate | 4 段命名 + 禁止词 + 字段 |
+| Evidence Builder | 渲染包含 4 段 | 输出 Markdown 结构 |
+| Evidence Builder | 无 Tool 语义词 | 防止 9B trigger loop |
+| 存档诊断 | 3 case 存档 diagnosis.json 反向 PASS | v2.0.0 端到端产物可重放 |
+| CLI 化 | verifier run / evidence_builder | 端到端可调用 |
+
+### Local E2E Test（本地 + 9B）
+
+**全链路 E2E 依赖本地 vLLM 9B**，**GitHub hosted runner 跑不了**（访问不到 localhost:8000，也不需要 GPU 跑 9B）。
+
+**前置条件**：
+
+```bash
+# 1. 本地 vLLM 9B 在线（:8000 端口）
+curl http://localhost:8000/v1/models
+
+# 2. Python 依赖
+pip install pyyaml requests
+```
+
+**跑全链路**：
+
+```bash
+cd project/aiops-fault-agent
+
+# 单条 case
+python3 runtime/run_case.py --case runtime/cases/case-01.yaml
+
+# 3 条 case 串行
+python3 runtime/run_case.py --batch case-01 case-02 case-03
+
+# 跳过 Report（仅诊断 + 校验）
+python3 runtime/run_case.py --case runtime/cases/case-01.yaml --skip-report
+```
+
+**期望输出**：
+
+```
+============================================================
+  Case: case-01  (OCS-BJ-02 连接池耗尽)
+============================================================
+[STEP 1] Evidence Builder: ... → evidence.md
+[OK] evidence.md (1670 chars)
+[STEP 2] Diagnosis Runner: ... → diagnosis.json
+[runner] PASS: prompt_tokens=2142 completion_tokens=705
+[STEP 3] Verifier: ... → verifier-result.json
+[STEP 4] Report Renderer: ... → report.md
+[SUMMARY] run-summary.md (4/4 PASS)
+```
+
+### Self-hosted Runner（如需要）
+
+如果未来 P0 阶段 1 启动，需要 CI 也跑 full E2E（含 9B）：
+
+1. 配置 GitHub self-hosted runner（带 GPU + vLLM）
+2. workflow 加 `runs-on: self-hosted`
+3. workflow 加 step: `pip install vllm` + 启动 9B 服务
+4. **不推荐在 v2.0.0 阶段做**（增加维护成本，且 3/3 mock 验证不需要）
+
+---
+
 ## 🎓 方法论沉淀
 
 参见 `evolution/insights.md` 教训 39：

@@ -1,0 +1,43 @@
+name: runtime-check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  deterministic-checks:
+    name: Deterministic Regression Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Evidence Builder 需要 PyYAML
+          pip install pyyaml
+          # 不安装 vllm / openai / requests（CI 不调 9B）
+
+      - name: Run deterministic regression tests
+        run: |
+          python runtime/tests/test_deterministic.py
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### runtime-check summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Python: 3.11" >> $GITHUB_STEP_SUMMARY
+          echo "- 不调 9B / 不连 vLLM / 不接 OpenAPI" >> $GITHUB_STEP_SUMMARY
+          echo "- Local E2E (含 9B) 需本地执行：见 README.md Local E2E Test 章节" >> $GITHUB_STEP_SUMMARY
