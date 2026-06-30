@@ -1,0 +1,14 @@
+{
+  "verdict": "PASS",
+  "case_id": "case-05",
+  "checks": {
+    "V1_fields": "OK (7 required fields present)",
+    "V2_consistency": "OK",
+    "V3_object_names": "OK (3 objects in evidence)",
+    "V4_error_format": "OK (4-digit pattern)",
+    "V5_pct_range": "OK (0-100)",
+    "V6_readonly": "OK (no forbidden commands / undeclared tools)"
+  },
+  "confidence": "INSUFFICIENT_EVIDENCE",
+  "top3_count": 0
+}

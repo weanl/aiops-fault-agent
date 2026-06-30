@@ -1,0 +1,92 @@
+{
+  "diagnosis": {
+    "case_id": "case-04",
+    "timeline": [
+      {
+        "time": "17:00",
+        "event": "时间窗口开始，CBS 用户充值请求开始进入系统"
+      },
+      {
+        "time": "17:30",
+        "event": "错误码 5004 和 5005 在 OCS-BJ-02 持续出现，其中 5004 占比 92.7%"
+      },
+      {
+        "time": "17:30",
+        "event": "OCS-BJ-02 连接池使用率 72.0%，平均响应时间 180ms，错误率 1.5%"
+      },
+      {
+        "time": "17:30",
+        "event": "CBS-SH-01 充值成功率 98.5%，所有 KPI 均在历史正常范围内"
+      },
+      {
+        "time": "17:30",
+        "event": "时间窗口内无任何告警触发（Evidence A 无数据）"
+      }
+    ],
+    "anomaly_cluster": [
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5004",
+        "count": 380,
+        "pct": 92.7
+      },
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5005",
+        "count": 30,
+        "pct": 7.3
+      }
+    ],
+    "top3_root_cause": [
+      {
+        "rank": 1,
+        "candidate": "OCS-BJ-02 连接池资源耗尽或连接获取超时，导致大量 5004 错误",
+        "evidence_refs": [
+          "Evidence D",
+          "Evidence B"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "rank": 2,
+        "candidate": "告警阈值配置过高或未覆盖当前错误模式，导致底层连接问题未被及时感知",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence D"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "rank": 3,
+        "candidate": "OCS-BJ-02 数据库连接池配置不足，无法应对当前并发量，引发写入超时（5005）",
+        "evidence_refs": [
+          "Evidence D",
+          "Evidence B"
+        ],
+        "confidence": "low"
+      }
+    ],
+    "evidence_matrix": {
+      "Evidence A": "refutes",
+      "Evidence B": "supports",
+      "Evidence C": "neutral",
+      "Evidence D": "supports"
+    },
+    "recommend": "推荐根因候选 1（OCS-BJ-02 连接池资源耗尽），但需进一步验证连接池实际可用连接数及数据库连接池配置。由于 Evidence A 显示无告警，需检查告警规则阈值是否覆盖当前错误率（1.5%）及连接池状态指标。",
+    "confidence": "medium"
+  },
+  "runner_meta": {
+    "model": "qwen3.5-9b-gptq4",
+    "elapsed_seconds": 12.19,
+    "usage": {
+      "prompt_tokens": 1859,
+      "total_tokens": 2597,
+      "completion_tokens": 738,
+      "prompt_tokens_details": null
+    },
+    "token_budget": 4000,
+    "token_budget_check": "prompt_tokens=1859 within budget=4000",
+    "thinking_disabled": true,
+    "tool_call_disabled": true
+  }
+}

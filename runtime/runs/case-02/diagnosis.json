@@ -61,21 +61,21 @@
       }
     ],
     "evidence_matrix": {
-      "Evidence A": "告警时间线显示 Adapter-PAY-01 的超时和成功率下降先于 CBS 侧告警，定位故障点在 Adapter-PAY-01 及其上游外部网关",
-      "Evidence B": "KPI 数据显示 Adapter-PAY-01 平均响应时间飙升至 8500ms（基线 320ms），超时错误率达 52.3%，而 OCS 指标正常，排除 OCS 故障",
-      "Evidence C": "拓扑图确认请求路径为 CBS -> OCS -> Adapter-PAY-01 -> GW-PAY-EXT，异常发生在 Adapter 与外部网关之间",
-      "Evidence D": "错误码统计显示 7001（超时）和 7002（拒绝）集中在 Adapter-PAY-01，OCS 无相关错误码，确证故障源为外部支付网关"
+      "Evidence A": "支持根因 1 和根因 2，告警时间线显示 Adapter-PAY-01 异常先于 CBS 和 OCS，且明确指向第三方支付网关超时",
+      "Evidence B": "强支持根因 1，Adapter-PAY-01 平均响应时间飙升至 8500ms（基线 320ms），超时错误率 52.3%，而 OCS 指标正常",
+      "Evidence C": "支持根因 1 和根因 2，拓扑显示故障点位于 Adapter-PAY-01 与外部网关 GW-PAY-EXT 之间，排除了 OCS 作为直接故障源",
+      "Evidence D": "强支持根因 1 和根因 2，错误码 7001（超时）占比 62.5%，7002（拒绝）占比 24.3%，且 OCS 错误码为 0，彻底排除 OCS 故障"
     },
-    "recommend": "高置信候选根因为外部支付网关超时或风控拒绝。建议优先检查第三方支付网关 GW-PAY-EXT 的状态、网络连通性及风控策略日志，验证其是否出现大规模超时或拒绝流量。",
+    "recommend": "推荐根因 1（第三方支付网关超时）。需立即检查外部网关 GW-PAY-EXT 的状态、网络连通性及延迟情况。同时建议检查 Adapter-PAY-01 的日志以确认是否有大量 7001 超时日志堆积。",
     "confidence": "high"
   },
   "runner_meta": {
     "model": "qwen3.5-9b-gptq4",
-    "elapsed_seconds": 11.57,
+    "elapsed_seconds": 12.18,
     "usage": {
       "prompt_tokens": 2264,
-      "total_tokens": 2996,
-      "completion_tokens": 732,
+      "total_tokens": 3032,
+      "completion_tokens": 768,
       "prompt_tokens_details": null
     },
     "token_budget": 4000,

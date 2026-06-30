@@ -1,0 +1,62 @@
+{
+  "diagnosis": {
+    "case_id": "case-05",
+    "timeline": [
+      {
+        "time": "18:05",
+        "event": "OCS-BJ-02 触发告警 ALM-2026-0630-501（连接池使用率超阈值，P2）"
+      },
+      {
+        "time": "18:12",
+        "event": "OCS-BJ-02 触发告警 ALM-2026-0630-502（连接池使用率持续超阈值，P2）"
+      },
+      {
+        "time": "18:30",
+        "event": "KPI 采集显示 OCS-BJ-02 连接池使用率 76%（低于 P2 阈值 85%），错误率 0.3%（低于基线）"
+      }
+    ],
+    "anomaly_cluster": [
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5004",
+        "count": 5,
+        "pct": 35.7
+      },
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5005",
+        "count": 3,
+        "pct": 21.4
+      },
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "0000",
+        "count": 6,
+        "pct": 42.9
+      }
+    ],
+    "top3_root_cause": [],
+    "evidence_matrix": {
+      "Evidence A": "告警显示连接池使用率曾超阈值，但随后 KPI 恢复正常",
+      "Evidence B": "当前 KPI 全在基线内，连接池使用率 76% 未达 P2 阈值 85%，错误率极低",
+      "Evidence C": "拓扑结构正常，CBS-SH-01 依赖 OCS-BJ-02",
+      "Evidence D": "错误码总量极少（14 次），且多为偶发超时，不构成主要故障原因"
+    },
+    "recommend": "建议验证告警是否为瞬时流量尖峰导致的误报或短暂抖动。由于当前 KPI（连接池 76%、错误率 0.3%）均在健康范围内，且错误码统计量极低，不支持‘连接池耗尽’或‘系统过载’作为当前根因。需结合历史同期流量数据对比，确认 18:05-18:12 期间是否存在异常流量突增。",
+    "confidence": "INSUFFICIENT_EVIDENCE"
+  },
+  "runner_meta": {
+    "model": "qwen3.5-9b-gptq4",
+    "elapsed_seconds": 9.56,
+    "usage": {
+      "prompt_tokens": 2099,
+      "total_tokens": 2683,
+      "completion_tokens": 584,
+      "prompt_tokens_details": null
+    },
+    "token_budget": 4000,
+    "token_budget_check": "prompt_tokens=2099 within budget=4000",
+    "thinking_disabled": true,
+    "tool_call_disabled": true
+  }
+}

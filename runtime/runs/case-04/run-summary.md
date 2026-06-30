@@ -1,7 +1,7 @@
-# Run Summary — case-03
+# Run Summary — case-04
 
-> **生成时间**：2026-06-30 21:07:16
-> **总耗时**：38.98s
+> **生成时间**：2026-06-30 21:47:31
+> **总耗时**：28.22s
 > **V2 框架**：数据/推理/校验/报告 职责分离
 
 ---
@@ -18,12 +18,12 @@
 ## 最终判定
 
 - **Verifier verdict**: **PASS**
-- **Confidence**: INSUFFICIENT_EVIDENCE
+- **Confidence**: medium
 - **Top-3 count**: 3
 
 ## 产物清单
 
-- `runtime/runs/case-03/verifier-result.json` (406 bytes)
-- `runtime/runs/case-03/diagnosis.json` (3259 bytes)
-- `runtime/runs/case-03/evidence.md` (2922 bytes)
-- `runtime/runs/case-03/report.md` (5703 bytes)
+- `runtime/runs/case-04/verifier-result.json` (391 bytes)
+- `runtime/runs/case-04/diagnosis.json` (2709 bytes)
+- `runtime/runs/case-04/evidence.md` (2174 bytes)
+- `runtime/runs/case-04/report.md` (3346 bytes)

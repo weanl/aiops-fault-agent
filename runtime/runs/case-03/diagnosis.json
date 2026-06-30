@@ -64,30 +64,30 @@
       },
       {
         "rank": 3,
-        "candidate": "CBS-SH-01 至 OCS-BJ-02 链路存在间歇性抖动，但 KPI 未显示严重阻塞",
+        "candidate": "CBS-SH-01 至 OCS-BJ-02 链路存在非确定性延迟，引发级联超时",
         "evidence_refs": [
           "Evidence A",
-          "Evidence B"
+          "Evidence C"
         ],
         "confidence": "low"
       }
     ],
     "evidence_matrix": {
-      "Evidence A": "告警分散且等级均为 P3，无明确先后因果，无法定位单一故障点",
-      "Evidence B": "所有对象 KPI 均在正常阈值内波动，无 P0/P1/P2 级别的性能瓶颈指标",
-      "Evidence C": "拓扑结构正常，无法解释为何错误码在两个不同对象中均匀分布",
-      "Evidence D": "错误码在 OCS 和 Adapter 之间均匀分布，无单一主导错误码，无法直接判定根因对象"
+      "Evidence A": "告警分散且均为 P3 级，无明确指向单一组件的强信号，无法区分是 OCS 还是 Adapter 的问题",
+      "Evidence B": "所有 KPI 指标均在历史正常范围内波动，未触及 P2/P1 阈值，不支持‘严重资源耗尽’或‘服务不可用’的结论",
+      "Evidence C": "拓扑结构正常，无法解释为何错误会同时分布在 OCS 和 Adapter 两个不同对象上",
+      "Evidence D": "错误码在两个对象间分布均匀（OCS 占 42.6%，Adapter 占 57.4%），无单一主导错误码，无法直接定位根因"
     },
-    "recommend": "由于错误码在 OCS-BJ-02 和 Adapter-PAY-01 之间均匀分布，且所有 KPI 指标均在正常范围内波动，当前证据不足以支撑高置信度的根因判断。建议进一步收集该时间窗口内的详细链路追踪日志（Trace Log）和数据库慢查询日志，以区分是 OCS 内部资源竞争还是下游支付网关的随机抖动。",
+    "recommend": "由于错误码在 OCS-BJ-02 和 Adapter-PAY-01 之间分布均匀，且所有 KPI 指标均在正常阈值内波动，当前证据不足以支撑高置信度的单一根因。建议进一步收集该时间窗口内的详细链路追踪日志（Trace Log）和数据库慢查询日志，以区分是 OCS 内部处理延迟还是 Adapter 外部响应问题。",
     "confidence": "INSUFFICIENT_EVIDENCE"
   },
   "runner_meta": {
     "model": "qwen3.5-9b-gptq4",
-    "elapsed_seconds": 12.4,
+    "elapsed_seconds": 13.06,
     "usage": {
       "prompt_tokens": 2214,
-      "total_tokens": 3000,
-      "completion_tokens": 786,
+      "total_tokens": 3037,
+      "completion_tokens": 823,
       "prompt_tokens_details": null
     },
     "token_budget": 4000,

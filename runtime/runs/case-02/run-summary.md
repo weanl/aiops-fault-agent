@@ -1,7 +1,7 @@
 # Run Summary — case-02
 
-> **生成时间**：2026-06-30 07:40:22
-> **总耗时**：34.37s
+> **生成时间**：2026-06-30 21:06:37
+> **总耗时**：38.3s
 > **V2 框架**：数据/推理/校验/报告 职责分离
 
 ---
@@ -24,6 +24,6 @@
 ## 产物清单
 
 - `runtime/runs/case-02/verifier-result.json` (389 bytes)
-- `runtime/runs/case-02/diagnosis.json` (2992 bytes)
+- `runtime/runs/case-02/diagnosis.json` (2996 bytes)
 - `runtime/runs/case-02/evidence.md` (2948 bytes)
-- `runtime/runs/case-02/report.md` (4909 bytes)
+- `runtime/runs/case-02/report.md` (5219 bytes)

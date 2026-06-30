@@ -1,0 +1,55 @@
+case_id: case-04
+case_name: 错误码集中但无对应告警
+time_window: 最近 30 分钟（17:00-17:30）
+scenario: CBS 用户充值失败
+expected_verify: 错误码 5004 集中在 OCS-BJ-02 但无任何告警触发，验证 verifier / Diagnosis 不能强判根因
+
+evidence:
+  - label: Evidence A
+    type: Alarm
+    description: 时间窗口内的告警快照（已从告警系统查询完成）。
+    columns: [告警ID, 时间, 对象, 类型, 等级]
+    rows: []
+    notes: |
+      **本 Case 关键设计：时间窗口内无任何告警触发**
+      （基线期常态，不应推论"无故障"——也可能是告警阈值未触发但底层错误已累积）
+
+  - label: Evidence B
+    type: KPI
+    description: 相关网元的 KPI 快照（已从监控系统查询完成）。
+    columns: [对象, 指标, 数值, 单位, 时间]
+    rows:
+      - {对象: "OCS-BJ-02", 指标: "连接池使用率", 数值: 72.0, 单位: "%", 时间: "17:30"}
+      - {对象: "OCS-BJ-02", 指标: "平均响应时间", 数值: 180, 单位: "ms", 时间: "17:30"}
+      - {对象: "OCS-BJ-02", 指标: "错误率", 数值: 1.5, 单位: "%", 时间: "17:30"}
+      - {对象: "CBS-SH-01", 指标: "充值成功率", 数值: 98.5, 单位: "%", 时间: "17:30"}
+    notes: |
+      所有 KPI 指标均在历史正常范围内
+      错误率 1.5% 未触发 P3 阈值（5%）
+
+  - label: Evidence C
+    type: Topology
+    description: 相关网元的拓扑关系（已从 CMDB 查询完成）。
+    graph: |
+      CBS-SH-01 (充值入口) → OCS-BJ-02 (在线计费) → Adapter-PAY-01 (第三方支付)
+    objects:
+      - {id: "CBS-SH-01", role: "充值入口网关"}
+      - {id: "OCS-BJ-02", role: "在线计费系统（北京节点）"}
+      - {id: "Adapter-PAY-01", role: "第三方支付适配器"}
+    notes: |
+      拓扑关系正常
+
+  - label: Evidence D
+    type: Error Statistics
+    description: 错误码分布统计（已从日志系统查询完成）。
+    columns: [错误码, 次数, 占比, 主要对象]
+    rows:
+      - {错误码: "5004", 次数: 380, 占比: 92.7, 主要对象: "OCS-BJ-02"}
+      - {错误码: "5005", 次数: 30, 占比: 7.3, 主要对象: "OCS-BJ-02"}
+    notes: |
+      错误码 5004：连接池获取超时
+      错误码 5005：数据库写入超时
+      **错误码集中在 OCS-BJ-02（100%），且 5004 占比 92.7%**
+      但 Evidence A 显示无任何告警 —— **告警阈值未触发**
+      不能仅凭错误码分布判定根因（缺少告警触发证据）
+
