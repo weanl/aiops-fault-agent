@@ -1,0 +1,39 @@
+{
+  "diagnosis": {
+    "case_id": "case-10",
+    "timeline": [
+      {
+        "time": "23:08",
+        "event": "OCS-BJ-02 触发 P2 告警：连接池使用率超阈值"
+      },
+      {
+        "time": "23:30",
+        "event": "OCS-BJ-02 KPI 显示连接池使用率 87.0%，平均响应时间 280ms"
+      }
+    ],
+    "anomaly_cluster": [],
+    "top3_root_cause": [],
+    "evidence_matrix": {
+      "Evidence A": "OCS-BJ-02 连接池使用率超阈值，可能引发资源耗尽",
+      "Evidence B": "OCS-BJ-02 连接池使用率 87.0%，处于轻度异常状态",
+      "Evidence C": "CBS-SH-01 通过 OCS-BJ-02 调用 Adapter-PAY-01，拓扑正常",
+      "Evidence D": "错误码分布数据缺失，无法分析具体失败原因"
+    },
+    "recommend": "由于缺乏错误码分布（Evidence D）和具体失败对象映射，无法确定是连接池耗尽导致的拒绝，还是其他原因。建议优先验证 OCS-BJ-02 的日志以获取具体错误码，并检查连接池阈值配置。",
+    "confidence": "INSUFFICIENT_EVIDENCE"
+  },
+  "runner_meta": {
+    "model": "qwen3.5-9b-gptq4",
+    "elapsed_seconds": 5.88,
+    "usage": {
+      "prompt_tokens": 1723,
+      "total_tokens": 2061,
+      "completion_tokens": 338,
+      "prompt_tokens_details": null
+    },
+    "token_budget": 4000,
+    "token_budget_check": "prompt_tokens=1723 within budget=4000",
+    "thinking_disabled": true,
+    "tool_call_disabled": true
+  }
+}

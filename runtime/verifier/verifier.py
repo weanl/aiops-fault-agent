@@ -184,6 +184,74 @@ def check_confidence_field(diag):
     return errs
 
 
+def check_evidence_completeness(diag, evidence_text):
+    """V7 (v2.2.0 新增)：关键字段缺失检测
+    Evidence Pack 的 4 段（Alarm/KPI/Topology/Error Statistics）必须含数据。
+    Error Statistics 段 rows=[] 或被明确标注为“缺失”是关键证据缺失。
+    若 Evidence D 为空 → 9B 不应输出 high confidence。
+    """
+    errs = []
+    # 按段拆分：## Evidence X — 标题 到下一个 ## 或文末
+    sections = re.split(r"\n##\s+", evidence_text)
+    section_map = {}
+    for sec in sections:
+        m = re.match(r"(Evidence\s+[A-D])\s*—\s*(\S+)", sec)
+        if m:
+            section_map[m.group(1)] = m.group(2)
+    # 检查 Error Statistics 段（Evidence D）实际是否有数据
+    # 方法：在 ## Evidence D 段内检查 "| 错误码" 表头 + 后续非空行
+    evidence_d_section = ""
+    for sec in sections:
+        if sec.startswith("Evidence D"):
+            evidence_d_section = sec
+            break
+    # 如果 Error Statistics 段内没有 4 位数字错误码 → 视为缺失
+    error_codes_in_evidence_d = ERROR_CODE_RE.findall(evidence_d_section)
+    evidence_d_empty = not error_codes_in_evidence_d
+    if evidence_d_empty:
+        # Evidence D 缺失错误码 → 9B 不应输出 high confidence
+        if diag.get("confidence") == "high":
+            errs.append({
+                "field": "evidence_d_completeness",
+                "rule": "V7",
+                "msg": "Evidence D (Error Statistics) has no error codes but diagnosis confidence=high (should be low/INSUFFICIENT_EVIDENCE)"
+            })
+        for rc in diag.get("top3_root_cause", []):
+            if rc.get("confidence") == "high":
+                errs.append({
+                    "field": "top3_root_cause.confidence",
+                    "rule": "V7",
+                    "msg": f"Evidence D (Error Statistics) has no error codes but rank {rc.get('rank')} candidate has confidence=high"
+                })
+    return errs
+
+
+def check_command_reference_safety(diag):
+    """V9 (v2.2.0 新增)：历史案例引用检测
+    recommend 不得包含"与历史案例相似""历史上有过"等表述 → 防止 LLM
+    用历史案例直接定根因。
+
+    限制：仅检查中文特定表述（避免误伤常规诊断报告中的历史参考）。
+    """
+    errs = []
+    flat = diag.get("recommend", "")
+    forbidden_phrases = [
+        r"与历史案例相似",
+        r"历史上有过",
+        r"历史案例表明",
+        r"根据历史.*得出",
+        r"历史上.*所以当前",
+    ]
+    for pat in forbidden_phrases:
+        if re.search(pat, flat):
+            errs.append({
+                "field": "recommend",
+                "rule": "V9",
+                "msg": f"recommend references historical case directly: {pat} (历史案例不能直接定根因)"
+            })
+    return errs
+
+
 # ----------------------------- Main -----------------------------
 
 def verify(diag_path, evidence_path):
@@ -214,6 +282,9 @@ def verify(diag_path, evidence_path):
     all_errs += check_v5_pct_range(diag)
     all_errs += check_v6_readonly_boundary(diag)
     all_errs += check_confidence_field(diag)
+    # v2.2.0 新增：V7 关键字段缺失 + V9 历史案例引用检测
+    all_errs += check_evidence_completeness(diag, evidence_text)
+    all_errs += check_command_reference_safety(diag)
 
     if not all_errs:
         return {

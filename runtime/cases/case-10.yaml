@@ -1,0 +1,54 @@
+case_id: case-10
+case_name: 关键字段缺失
+time_window: 最近 30 分钟（23:00-23:30）
+scenario: CBS 用户充值失败
+expected_verify: 验证缺字段时 9B 拒绝强结论；缺错误码分布或缺对象映射时输出 INSUFFICIENT_EVIDENCE 或 low
+
+evidence:
+  - label: Evidence A
+    type: Alarm
+    description: 时间窗口内的告警快照（已从告警系统查询完成）。
+    columns: [告警ID, 时间, 对象, 类型, 等级]
+    rows:
+      - {告警ID: "ALM-2026-0630-1001", 时间: "23:08", 对象: "OCS-BJ-02", 类型: "连接池使用率超阈值", 等级: "P2"}
+    notes: |
+      1 条 P2 告警
+      **告警对象是 OCS-BJ-02**
+
+  - label: Evidence B
+    type: KPI
+    description: 相关网元的 KPI 快照（已从监控系统查询完成）。
+    columns: [对象, 指标, 数值, 单位, 时间]
+    rows:
+      - {对象: "OCS-BJ-02", 指标: "连接池使用率", 数值: 87.0, 单位: "%", 时间: "23:30"}
+      - {对象: "OCS-BJ-02", 指标: "平均响应时间", 数值: 280, 单位: "ms", 时间: "23:30"}
+    notes: |
+      OCS KPI 显示轻度异常（连接池接近 P2 阈值）
+
+  - label: Evidence C
+    type: Topology
+    description: 相关网元的拓扑关系（已从 CMDB 查询完成）。
+    graph: |
+      CBS-SH-01 (充值入口) → OCS-BJ-02 (在线计费) → Adapter-PAY-01 (第三方支付)
+    objects:
+      - {id: "CBS-SH-01", role: "充值入口网关"}
+      - {id: "OCS-BJ-02", role: "在线计费系统（北京节点）"}
+      - {id: "Adapter-PAY-01", role: "第三方支付适配器"}
+    notes: |
+      拓扑关系正常
+
+  - label: Evidence D
+    type: Error Statistics
+    description: |
+      关键字段缺失：错误码分布统计不可用（日志系统查询失败 / 数据未归档）。
+      本段为占位说明，不包含任何错误码数据。
+
+      缺失字段：
+      - 错误码列表
+      - 各错误码次数
+      - 各错误码占比
+      - 错误码主要对象
+
+      本 Case 关键设计：Evidence D 段不含数据。
+    columns: []
+    rows: []

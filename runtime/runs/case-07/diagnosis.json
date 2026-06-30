@@ -1,0 +1,91 @@
+{
+  "diagnosis": {
+    "case_id": "case-07",
+    "timeline": [
+      {
+        "time": "20:08",
+        "event": "OCS-BJ-02 触发告警：连接池使用率超阈值 (P2)"
+      },
+      {
+        "time": "20:14",
+        "event": "Adapter-PAY-01 触发告警：第三方支付成功率下降 (P2)"
+      },
+      {
+        "time": "20:22",
+        "event": "CBS-SH-01 触发告警：充值成功率下降 (P2)"
+      }
+    ],
+    "anomaly_cluster": [
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5004",
+        "count": 380,
+        "pct": 45.2
+      },
+      {
+        "object_id": "Adapter-PAY-01",
+        "error_code": "7001",
+        "count": 320,
+        "pct": 38.1
+      },
+      {
+        "object_id": "CBS-SH-01",
+        "error_code": "8001",
+        "count": 140,
+        "pct": 16.7
+      }
+    ],
+    "top3_root_cause": [
+      {
+        "rank": 1,
+        "candidate": "OCS-BJ-02 连接池资源耗尽导致下游 Adapter 请求超时，引发级联故障",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence B",
+          "Evidence D"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "rank": 2,
+        "candidate": "Adapter-PAY-01 第三方支付网关自身故障导致响应超时，进而阻塞 OCS 连接池",
+        "evidence_refs": [
+          "Evidence B",
+          "Evidence D",
+          "Evidence C"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "rank": 3,
+        "candidate": "CBS-SH-01 入口网关配置错误或上游流量突发导致本地超时",
+        "evidence_refs": [
+          "Evidence D"
+        ],
+        "confidence": "low"
+      }
+    ],
+    "evidence_matrix": {
+      "Evidence A": "OCS 告警时间最早，但拓扑显示其位于 Adapter 上游，且错误码 5004 占比未达绝对主导（45.2%），不能直接判定为根因",
+      "Evidence B": "Adapter 成功率 72% 恶化最严重（基线 99%），响应时间 1800ms 极高，表明 Adapter 存在严重阻塞或超时问题",
+      "Evidence C": "拓扑为 CBS -> OCS -> Adapter，Adapter 异常可能反向导致 OCS 连接池堆积，CBS 异常可能是最终表现",
+      "Evidence D": "错误码 5004 (OCS) 和 7001 (Adapter) 占比接近且均无单一主导（均<70%），无法仅凭错误码分布确定唯一根因"
+    },
+    "recommend": "建议优先排查 Adapter-PAY-01 的第三方支付网关连接状态及网络延迟（Evidence B），同时检查 OCS-BJ-02 连接池配置是否因下游超时导致资源耗尽。需验证 Adapter 故障是否先于 OCS 连接池满发生，以排除级联效应。",
+    "confidence": "medium"
+  },
+  "runner_meta": {
+    "model": "qwen3.5-9b-gptq4",
+    "elapsed_seconds": 13.04,
+    "usage": {
+      "prompt_tokens": 2436,
+      "total_tokens": 3199,
+      "completion_tokens": 763,
+      "prompt_tokens_details": null
+    },
+    "token_budget": 4000,
+    "token_budget_check": "prompt_tokens=2436 within budget=4000",
+    "thinking_disabled": true,
+    "tool_call_disabled": true
+  }
+}

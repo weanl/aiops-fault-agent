@@ -1,0 +1,81 @@
+{
+  "diagnosis": {
+    "case_id": "case-09",
+    "timeline": [
+      {
+        "time": "22:05",
+        "event": "OCS-BJ-02 触发 P2 告警：连接池使用率超阈值"
+      },
+      {
+        "time": "22:25",
+        "event": "CBS-SH-01 触发 P3 告警：充值成功率下降"
+      }
+    ],
+    "anomaly_cluster": [
+      {
+        "object_id": "OCS-BJ-02",
+        "error_code": "5004",
+        "count": 150,
+        "pct": 75.0
+      },
+      {
+        "object_id": "CBS-SH-01",
+        "error_code": "8001",
+        "count": 50,
+        "pct": 25.0
+      }
+    ],
+    "top3_root_cause": [
+      {
+        "rank": 1,
+        "candidate": "OCS-BJ-02 连接池资源耗尽导致下游超时或拒绝，引发 5004 错误",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence B",
+          "Evidence D"
+        ],
+        "confidence": "medium"
+      },
+      {
+        "rank": 2,
+        "candidate": "CBS-SH-01 内部逻辑异常导致 8001 错误，但时间线上滞后于 OCS 告警",
+        "evidence_refs": [
+          "Evidence A",
+          "Evidence D"
+        ],
+        "confidence": "low"
+      },
+      {
+        "rank": 3,
+        "candidate": "网络延迟或中间件故障导致 OCS 异常未能及时传导至 CBS 告警",
+        "evidence_refs": [
+          "Evidence C",
+          "Evidence D"
+        ],
+        "confidence": "low"
+      }
+    ],
+    "evidence_matrix": {
+      "Evidence A": "支持 OCS 先于 CBS 出现异常，符合因果链方向，但时间间隔较长（20 分钟）",
+      "Evidence B": "显示 OCS 连接池 89% 且错误率 3.2%，证实资源紧张；CBS 成功率 92% 略低于基线但未达告警阈值",
+      "Evidence C": "拓扑显示 CBS 依赖 OCS，支持 OCS 故障导致 CBS 故障的假设",
+      "Evidence D": "显示 5004 主要发生在 OCS，8001 主要发生在 CBS，但缺乏首次出现时间戳，无法精确对齐因果"
+    },
+    "recommend": "推荐候选根因 1（OCS 连接池耗尽），但置信度为 medium。由于 Evidence D 中错误码首次出现时间缺失，且 CBS 告警比 OCS 告警晚 20 分钟，存在时间线冲突风险，需补充错误码时间戳或 KPI 异常起点时间以验证因果链。",
+    "confidence": "medium"
+  },
+  "runner_meta": {
+    "model": "qwen3.5-9b-gptq4",
+    "elapsed_seconds": 11.19,
+    "usage": {
+      "prompt_tokens": 2219,
+      "total_tokens": 2883,
+      "completion_tokens": 664,
+      "prompt_tokens_details": null
+    },
+    "token_budget": 4000,
+    "token_budget_check": "prompt_tokens=2219 within budget=4000",
+    "thinking_disabled": true,
+    "tool_call_disabled": true
+  }
+}

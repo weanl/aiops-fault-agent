@@ -122,14 +122,75 @@ def test_verifier_confidence_cross_check():
         os.unlink(tmp)
 
 
+def test_verifier_v7_evidence_d_missing():
+    """V7 (v2.2.0 新增)：Evidence D 缺失但 confidence=high 必须 FAIL"""
+    diag = {
+        "case_id": "v7-bad",
+        "timeline": [],
+        "anomaly_cluster": [],
+        "top3_root_cause": [{"rank": 1, "candidate": "OCS", "evidence_refs": [], "confidence": "high"}],
+        "evidence_matrix": {},
+        "recommend": "建议扩容",
+        "confidence": "high",
+    }
+    # 写 Evidence D 缺失的 evidence
+    ev_text = """# Evidence Pack — Case V7
+## Evidence A — Alarm
+- ALM-001
+## Evidence B — KPI
+- OCS 87%
+## Evidence C — Topology
+- CBS → OCS
+## Evidence D — Error Statistics
+**关键字段缺失**：错误码分布不可用。
+"""
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(diag, f)
+        tmp_d = f.name
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False) as f:
+        f.write(ev_text)
+        tmp_e = f.name
+    try:
+        result, _ = verifier.verify(tmp_d, tmp_e)
+        rules_hit = {e["rule"] for e in result.get("errors", [])}
+        record("verifier: V7 Evidence D 缺失 + high 置信 = FAIL", "V7" in rules_hit,
+               f"verdict={result['verdict']} hit={sorted(rules_hit)}")
+    finally:
+        os.unlink(tmp_d)
+        os.unlink(tmp_e)
+
+
+def test_verifier_v9_historical_reference():
+    """V9 (v2.2.0 新增)：recommend 引用历史案例定根因必须 FAIL"""
+    diag = {
+        "case_id": "v9-bad",
+        "timeline": [],
+        "anomaly_cluster": [],
+        "top3_root_cause": [{"rank": 1, "candidate": "x", "evidence_refs": [], "confidence": "medium"}],
+        "evidence_matrix": {},
+        "recommend": "与历史案例相似，所以当前根因是 OCS 连接池耗尽",
+        "confidence": "medium",
+    }
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json.dump(diag, f)
+        tmp = f.name
+    try:
+        result, _ = verifier.verify(tmp, PROJECT_ROOT / "dry-run" / "case-01-evidence.md")
+        rules_hit = {e["rule"] for e in result.get("errors", [])}
+        record("verifier: V9 recommend 引用历史案例 = FAIL", "V9" in rules_hit,
+               f"verdict={result['verdict']} hit={sorted(rules_hit)}")
+    finally:
+        os.unlink(tmp)
+
+
 # ============================================================
 # 2. evidence_builder 模块
 # ============================================================
 
 def test_evidence_builder_validate():
-    """3 条 case YAML 校验通过（4 段命名 + 禁止词 + 字段）"""
+    """全部 case YAML 校验通过（4 段命名 + 禁止词 + 字段）"""
     all_ok = True
-    for cid in ["case-01", "case-02", "case-03"]:
+    for cid in [f"case-{i:02d}" for i in range(1, 11)]:
         yaml_p = RUNTIME / "cases" / f"{cid}.yaml"
         if not yaml_p.exists():
             record(f"evidence_builder: {cid} YAML 存在", False, f"missing {yaml_p}")
@@ -187,7 +248,7 @@ def test_evidence_builder_no_tool_words():
 def test_three_cases_archived_pass():
     """3 case 存档 diagnosis.json 在 CI 重新跑 verifier 必须 PASS"""
     all_ok = True
-    for cid in ["case-01", "case-02", "case-03"]:
+    for cid in ["case-01", "case-02", "case-03", "case-04", "case-05", "case-06", "case-07", "case-08", "case-09", "case-10"]:
         # 优先用 runs/ 目录下的最新产物
         diag = RUNTIME / "runs" / cid / "diagnosis.json"
         ev = RUNTIME / "runs" / cid / "evidence.md"
@@ -195,6 +256,9 @@ def test_three_cases_archived_pass():
             # fallback 到 dry-run
             diag = PROJECT_ROOT / "dry-run" / f"{cid}-diagnosis.json"
             ev = PROJECT_ROOT / "dry-run" / f"{cid}-evidence.md"
+        if not (diag.exists() and ev.exists()):
+            # 早期 v2.0.0 case 仍在 dry-run/ 中
+            continue
         result, _ = verifier.verify(diag, ev)
         ok = result["verdict"] == "PASS"
         conf = result.get("confidence", "?")
@@ -269,6 +333,8 @@ def main():
     test_verifier_bad_fixture()
     test_verifier_v1_v2_consistency()
     test_verifier_confidence_cross_check()
+    test_verifier_v7_evidence_d_missing()
+    test_verifier_v9_historical_reference()
 
     print("\n[2] Evidence Builder 模块")
     test_evidence_builder_validate()
