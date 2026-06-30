@@ -1,6 +1,6 @@
 # AIOps Fault Agent — V2 框架（工程化骨架）
 
-> **版本**：v2 工程化骨架（2026-06-30 07:55 CST）
+> **版本**：v2.2.1（2026-06-30 22:50 CST，V8 时间线闭合性落地）
 > **范围**：CBS 用户充值失败（仅此一个场景）
 > **目标**：把 v2 dry-run 产物沉淀成可复用验证框架骨架，**不接真实 OpenAPI，不建设大规模评测集，不扩展新产品**。
 
@@ -316,6 +316,76 @@ python3 runtime/run_case.py --case runtime/cases/case-01.yaml --skip-report
 |---|:----:|
 | 4 个核心模块（evidence / diagnosis / verifier / report）| ✅ |
 | 1 个 pipeline 串起器（run_case.py）| ✅ |
-| 3 条 mock case 端到端 PASS | ✅ |
+| **10 条 mock case 端到端 PASS** | ✅（v2.2.1） |
+| **Verifier V1-V9 全部实现** | ✅（v2.2.1） |
 | README | ✅ |
-| **下一阶段建议** | 等 Vanson 拍板：<br/>A. 扩到 10-20 条 mock case<br/>B. 扩到 CBS 交易下降 / 告警风暴<br/>C. 接入真实 OpenAPI |
+| **下一阶段建议** | 等 Vanson 拍板：<br/>A. 接真实 OpenAPI（见 readiness-for-real-openapi.md）<br/>B. 扩场景（CBS 交易下降 / 告警风暴）<br/>C. 扩到 20+ mock case |
+
+---
+
+## 📜 版本演进
+
+| 版本 | 日期 | 关键变更 |
+|------|------|----------|
+| **v2.2.1** | 2026-06-30 22:50 | **V8 时间线闭合性落地**（C1-C4 四类冲突检测）+ 3 个 fixture + case-09 evidence 强化 + test_deterministic 34 项 PASS |
+| v2.2.0 | 2026-06-30 22:50 | V7 关键字段缺失 + V9 历史案例引用检测 + 4 case (case-07/08/09/10) + 31/31 PASS |
+| v2.1.0 | 2026-06-30 22:00 | V1 confidence 矛盾检测 + runner_meta 兼容 + 3 case (case-04/05/06) |
+| v2.0.0 | 2026-06-30 20:30 | 框架骨架（4 模块 + pipeline + 3 case PASS）|
+
+---
+
+## 🛡️ Verifier V1-V9 规则状态（v2.2.1 全部实现）
+
+| 规则 | 名称 | 触发条件 | 实现版本 |
+|------|------|---------|:--------:|
+| **V1** | 字段必填 | 必填字段缺失 / confidence 矛盾 | v2.0.0 |
+| **V2** | 数值一致性 | 错误码/对象/Evidence ref 不在 evidence | v2.0.0 |
+| **V3** | 对象名反查 | 引用的 object_id 不在 evidence | v2.0.0 |
+| **V4** | 错误码格式 | 错误码非 4 位数字 | v2.0.0 |
+| **V5** | 百分比范围 | pct 不在 [0,100] | v2.0.0 |
+| **V6** | 只读边界 | 出现 kubectl/ssh/DELETE 等命令 | v2.0.0 |
+| **V7** | 关键字段缺失 | Evidence D 无错误码 + high confidence | v2.2.0 |
+| **V8** | 时间线闭合性 | C1 拓扑倒挂 / C2 沉默对象 / C3 KPI 早于告警 / C4 错误码/告警对象不相交 + high confidence | **v2.2.1** |
+| **V9** | 历史案例引用 | recommend 出现"与历史案例相似"等表述 | v2.2.0 |
+
+**V8 详细规则**：
+
+- **C1** 拓扑上下游时间倒挂：拓扑 A → B，B 告警早于 A ≥ 5 分钟 → 倒挂
+- **C2** 错误码对象脱离告警对象集：Evidence D 占比 > 0% 的错误码对象不在 Evidence A 告警对象集中 → 沉默故障嫌疑
+- **C3** KPI 起点早于告警：Evidence B KPI 时间 < Evidence A 最早告警时间 ≥ 5 分钟 → 因果倒挂
+- **C4** 错误码对象与告警对象完全不相交：所有错误码对象都不在告警对象集 → 完全沉默
+
+**V8 判定**：
+
+- 任意 C1-C4 命中 + diagnosis confidence=high → **FAIL**
+- 任意 C1-C4 命中 + top3 任一 candidate confidence=high → **FAIL**
+- 任意 C1-C4 命中 + medium/low/INSUFFICIENT_EVIDENCE → **PASS**（9B 已正确降级）
+
+**V8 实现位置**：`runtime/verifier/timeline_parser.py`（独立模块）+ `runtime/verifier/verifier.py` `check_timeline_consistency()`。
+
+**V8 fixture**（3 组）：
+
+- `v8-conflict-high-fail` — 时间线冲突 + diagnosis high → FAIL
+- `v8-closed-high-pass` — 时间线闭合 + diagnosis high → PASS（不误伤）
+- `v8-conflict-low-pass` — 时间线冲突 + INSUFFICIENT_EVIDENCE → PASS（不限制 9B 自由判断）
+
+---
+
+## 🧪 V8 fixture 测试结果（v2.2.1）
+
+```
+✅ verifier: V8 冲突+high = FAIL — verdict=FAIL hit=['V8']
+✅ verifier: V8 闭合+high = PASS — verdict=PASS conf=high
+✅ verifier: V8 冲突+INSUFFICIENT = PASS — verdict=PASS conf=INSUFFICIENT_EVIDENCE
+```
+
+---
+
+## 🧪 test_deterministic 测试覆盖（v2.2.1: 34/34 PASS）
+
+| 层级 | 测试项 | 数量 |
+|------|--------|:----:|
+| Verifier | good/bad fixture + v1 badcase + confidence 矛盾 + V7/V8/V9 | 9 |
+| Evidence Builder | 10 case YAML validate + 4 段渲染 + 无 Tool 词 | 12 |
+| 存档诊断 | 10 case 反向 verifier PASS | 10 |
+| CLI 端到端 | verifier run + evidence_builder 输出 | 3 |

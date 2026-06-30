@@ -1,0 +1,24 @@
+{
+  "case_id": "v8-conflict-low-PASS",
+  "timeline": [
+    {"time": "16:00", "event": "CBS 充值成功率下降"}
+  ],
+  "anomaly_cluster": [
+    {"object_id": "OCS-BJ-02", "error_code": "5004", "count": 30, "pct": 30.0}
+  ],
+  "top3_root_cause": [
+    {
+      "rank": 1,
+      "candidate": "OCS-BJ-02 可能存在静默故障，但 KPI 正常，无法确认",
+      "evidence_refs": ["Evidence D"],
+      "confidence": "low"
+    }
+  ],
+  "evidence_matrix": {
+    "Evidence A": "仅 CBS 告警，无 OCS 告警",
+    "Evidence B": "OCS 连接池 70% 正常",
+    "Evidence D": "5004 集中在 OCS，但 OCS 无告警，证据冲突"
+  },
+  "recommend": "证据冲突，建议检查 OCS-BJ-02 是否存在静默故障",
+  "confidence": "INSUFFICIENT_EVIDENCE"
+}

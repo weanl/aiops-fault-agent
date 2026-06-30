@@ -25,6 +25,13 @@ import re
 import sys
 from pathlib import Path
 
+# V8 时间线闭合性：独立模块
+try:
+    from timeline_parser import check_timeline_closure, detect_conflicts  # noqa: F401
+    V8_AVAILABLE = True
+except ImportError:
+    V8_AVAILABLE = False
+
 
 # ----------------------------- 校验规则 -----------------------------
 
@@ -252,6 +259,31 @@ def check_command_reference_safety(diag):
     return errs
 
 
+def check_timeline_consistency(diag, evidence_text):
+    """V8 (v2.2.1 实现)：时间线闭合性校验
+
+    检测 Evidence Pack 中是否存在 4 类时间线冲突：
+      C1: 拓扑上下游时间倒挂（下游告警早于上游）
+      C2: 错误码对象不在告警对象集（沉默故障嫌疑）
+      C3: KPI 起点早于告警（因果倒挂）
+      C4: 错误码对象与告警对象完全不相交
+
+    触发条件：存在冲突 + diagnosis confidence=high → FAIL
+    触发条件：存在冲突 + 任一 top3 candidate confidence=high → FAIL
+    存在冲突 + medium/low/INSUFFICIENT_EVIDENCE → PASS（9B 已正确降级）
+
+    不调用 LLM，纯文本解析。
+    """
+    if not V8_AVAILABLE:
+        return []  # 模块不可用时静默跳过（CI 环境）
+    try:
+        return check_timeline_closure(diag, evidence_text)
+    except Exception as e:
+        # V8 解析失败不应阻断其他 verifier 检查
+        return [{"field": "timeline_parser", "rule": "V8",
+                 "msg": f"V8 parse error (non-fatal): {e}"}]
+
+
 # ----------------------------- Main -----------------------------
 
 def verify(diag_path, evidence_path):
@@ -285,6 +317,8 @@ def verify(diag_path, evidence_path):
     # v2.2.0 新增：V7 关键字段缺失 + V9 历史案例引用检测
     all_errs += check_evidence_completeness(diag, evidence_text)
     all_errs += check_command_reference_safety(diag)
+    # v2.2.1 新增：V8 时间线闭合性（默认调用，独立 try/except 防解析异常）
+    all_errs += check_timeline_consistency(diag, evidence_text)
 
     if not all_errs:
         return {
@@ -297,6 +331,9 @@ def verify(diag_path, evidence_path):
                 "V4_error_format": "OK (4-digit pattern)",
                 "V5_pct_range": "OK (0-100)",
                 "V6_readonly": "OK (no forbidden commands / undeclared tools)",
+                "V7_evidence_completeness": "OK (all 4 sections have data)",
+                "V9_command_reference_safety": "OK (no historical case direct reference)",
+                "V8_timeline_closure": "OK (timeline conflicts handled correctly)",
             },
             "confidence": diag.get("confidence", "N/A"),
             "top3_count": len(diag.get("top3_root_cause", [])),

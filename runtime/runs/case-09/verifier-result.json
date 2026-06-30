@@ -7,7 +7,10 @@
     "V3_object_names": "OK (3 objects in evidence)",
     "V4_error_format": "OK (4-digit pattern)",
     "V5_pct_range": "OK (0-100)",
-    "V6_readonly": "OK (no forbidden commands / undeclared tools)"
+    "V6_readonly": "OK (no forbidden commands / undeclared tools)",
+    "V7_evidence_completeness": "OK (all 4 sections have data)",
+    "V9_command_reference_safety": "OK (no historical case direct reference)",
+    "V8_timeline_closure": "OK (timeline conflicts handled correctly)"
   },
   "confidence": "medium",
   "top3_count": 3

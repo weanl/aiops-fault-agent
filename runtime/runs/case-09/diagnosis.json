@@ -23,22 +23,29 @@
         "error_code": "8001",
         "count": 50,
         "pct": 25.0
+      },
+      {
+        "object_id": "Adapter-PAY-01",
+        "error_code": "6001",
+        "count": 35,
+        "pct": 17.5
       }
     ],
     "top3_root_cause": [
       {
         "rank": 1,
-        "candidate": "OCS-BJ-02 连接池资源耗尽导致下游超时或拒绝，引发 5004 错误",
+        "candidate": "OCS-BJ-02 连接池资源耗尽导致下游超时或拒绝请求，引发 CBS-SH-01 成功率下降",
         "evidence_refs": [
           "Evidence A",
           "Evidence B",
+          "Evidence C",
           "Evidence D"
         ],
         "confidence": "medium"
       },
       {
         "rank": 2,
-        "candidate": "CBS-SH-01 内部逻辑异常导致 8001 错误，但时间线上滞后于 OCS 告警",
+        "candidate": "CBS-SH-01 内部存在独立故障（如 8001 错误），导致成功率下降，但时间线上晚于 OCS 告警",
         "evidence_refs": [
           "Evidence A",
           "Evidence D"
@@ -47,34 +54,33 @@
       },
       {
         "rank": 3,
-        "candidate": "网络延迟或中间件故障导致 OCS 异常未能及时传导至 CBS 告警",
+        "candidate": "Adapter-PAY-01 发生静默故障（6001 错误），但未触发告警且未影响 CBS 成功率统计",
         "evidence_refs": [
-          "Evidence C",
           "Evidence D"
         ],
         "confidence": "low"
       }
     ],
     "evidence_matrix": {
-      "Evidence A": "支持 OCS 先于 CBS 出现异常，符合因果链方向，但时间间隔较长（20 分钟）",
-      "Evidence B": "显示 OCS 连接池 89% 且错误率 3.2%，证实资源紧张；CBS 成功率 92% 略低于基线但未达告警阈值",
-      "Evidence C": "拓扑显示 CBS 依赖 OCS，支持 OCS 故障导致 CBS 故障的假设",
-      "Evidence D": "显示 5004 主要发生在 OCS，8001 主要发生在 CBS，但缺乏首次出现时间戳，无法精确对齐因果"
+      "Evidence A": "支持 OCS 先于 CBS 异常的时间线，支持 OCS 连接池问题，但无法解释 Adapter-PAY-01 的 6001 错误",
+      "Evidence B": "确认 OCS 连接池 89% 超阈值，确认 CBS 成功率 92% 低于基线，但 CBS 告警时间滞后于 OCS 告警",
+      "Evidence C": "确认 CBS 调用 OCS 的拓扑关系，支持 OCS 故障传导至 CBS 的因果假设",
+      "Evidence D": "显示 5004 集中在 OCS，8001 集中在 CBS，6001 集中在 Adapter-PAY-01；但缺乏错误码首次出现时间，且 Adapter-PAY-01 无对应告警，存在时间线冲突"
     },
-    "recommend": "推荐候选根因 1（OCS 连接池耗尽），但置信度为 medium。由于 Evidence D 中错误码首次出现时间缺失，且 CBS 告警比 OCS 告警晚 20 分钟，存在时间线冲突风险，需补充错误码时间戳或 KPI 异常起点时间以验证因果链。",
+    "recommend": "推荐根因候选 1（OCS 连接池耗尽），但置信度为 medium。需补充验证：1) 获取 5004 错误码的首次出现时间，确认是否早于 22:05；2) 检查 Adapter-PAY-01 日志确认 6001 是否为静默故障或误报；3) 验证 CBS 侧 8001 错误是否与 OCS 超时有直接关联。",
     "confidence": "medium"
   },
   "runner_meta": {
     "model": "qwen3.5-9b-gptq4",
-    "elapsed_seconds": 11.19,
+    "elapsed_seconds": 13.42,
     "usage": {
-      "prompt_tokens": 2219,
-      "total_tokens": 2883,
-      "completion_tokens": 664,
+      "prompt_tokens": 2354,
+      "total_tokens": 3148,
+      "completion_tokens": 794,
       "prompt_tokens_details": null
     },
     "token_budget": 4000,
-    "token_budget_check": "prompt_tokens=2219 within budget=4000",
+    "token_budget_check": "prompt_tokens=2354 within budget=4000",
     "thinking_disabled": true,
     "tool_call_disabled": true
   }

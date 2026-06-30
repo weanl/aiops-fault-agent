@@ -1,0 +1,26 @@
+{
+  "case_id": "v8-closed-high-PASS",
+  "timeline": [
+    {"time": "10:00", "event": "OCS 连接池使用率超阈值告警"},
+    {"time": "10:15", "event": "CBS 上游调用失败率告警"}
+  ],
+  "anomaly_cluster": [
+    {"object_id": "OCS-BJ-02", "error_code": "5004", "count": 200, "pct": 80.0}
+  ],
+  "top3_root_cause": [
+    {
+      "rank": 1,
+      "candidate": "OCS-BJ-02 连接池耗尽导致 CBS-SH-01 上游调用失败",
+      "evidence_refs": ["Evidence A", "Evidence B", "Evidence C", "Evidence D"],
+      "confidence": "high"
+    }
+  ],
+  "evidence_matrix": {
+    "Evidence A": "OCS 10:00 先告警，CBS 10:15 后告警，因果链方向正确",
+    "Evidence B": "OCS 连接池 98% 接近耗尽，错误率 8.5%",
+    "Evidence C": "CBS 依赖 OCS，下游 CBS 受上游 OCS 异常影响符合拓扑",
+    "Evidence D": "5004 集中在 OCS（80%）与告警对象一致，时间线闭合"
+  },
+  "recommend": "OCS-BJ-02 连接池耗尽为根因，需扩容或重启 OCS 服务",
+  "confidence": "high"
+}

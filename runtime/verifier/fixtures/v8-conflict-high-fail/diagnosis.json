@@ -1,0 +1,24 @@
+{
+  "case_id": "v8-conflict-high-FAIL",
+  "timeline": [
+    {"time": "14:00", "event": "OCS 告警"}
+  ],
+  "anomaly_cluster": [
+    {"object_id": "OCS-BJ-02", "error_code": "5004", "count": 100, "pct": 50.0}
+  ],
+  "top3_root_cause": [
+    {
+      "rank": 1,
+      "candidate": "OCS-BJ-02 连接池耗尽",
+      "evidence_refs": ["Evidence A", "Evidence B", "Evidence D"],
+      "confidence": "high"
+    }
+  ],
+  "evidence_matrix": {
+    "Evidence A": "OCS 告警",
+    "Evidence B": "OCS 连接池 95%",
+    "Evidence D": "5004 集中在 OCS"
+  },
+  "recommend": "根因是 OCS 连接池耗尽",
+  "confidence": "high"
+}

@@ -183,6 +183,43 @@ def test_verifier_v9_historical_reference():
         os.unlink(tmp)
 
 
+def test_verifier_v8_timeline_conflict_high_fails():
+    """V8 (v2.2.1 新增)：时间线冲突 + high confidence = FAIL"""
+    fix_dir = RUNTIME / "verifier" / "fixtures" / "v8-conflict-high-fail"
+    if not (fix_dir / "diagnosis.json").exists():
+        record("verifier: V8 冲突+high = FAIL", False, f"fixture missing: {fix_dir}")
+        return
+    result, _ = verifier.verify(fix_dir / "diagnosis.json", fix_dir / "evidence.md")
+    rules_hit = {e["rule"] for e in result.get("errors", [])}
+    record("verifier: V8 冲突+high = FAIL",
+           result["verdict"] == "FAIL" and "V8" in rules_hit,
+           f"verdict={result['verdict']} hit={sorted(rules_hit)}")
+
+
+def test_verifier_v8_timeline_closed_high_passes():
+    """V8 (v2.2.1 新增)：时间线闭合 + high confidence = PASS（不误伤）"""
+    fix_dir = RUNTIME / "verifier" / "fixtures" / "v8-closed-high-pass"
+    if not (fix_dir / "diagnosis.json").exists():
+        record("verifier: V8 闭合+high = PASS", False, f"fixture missing: {fix_dir}")
+        return
+    result, _ = verifier.verify(fix_dir / "diagnosis.json", fix_dir / "evidence.md")
+    record("verifier: V8 闭合+high = PASS",
+           result["verdict"] == "PASS",
+           f"verdict={result['verdict']} conf={result.get('confidence', '?')}")
+
+
+def test_verifier_v8_timeline_conflict_low_passes():
+    """V8 (v2.2.1 新增)：时间线冲突 + INSUFFICIENT_EVIDENCE = PASS（不限制 9B 自由判断空间）"""
+    fix_dir = RUNTIME / "verifier" / "fixtures" / "v8-conflict-low-pass"
+    if not (fix_dir / "diagnosis.json").exists():
+        record("verifier: V8 冲突+INSUFFICIENT = PASS", False, f"fixture missing: {fix_dir}")
+        return
+    result, _ = verifier.verify(fix_dir / "diagnosis.json", fix_dir / "evidence.md")
+    record("verifier: V8 冲突+INSUFFICIENT = PASS",
+           result["verdict"] == "PASS",
+           f"verdict={result['verdict']} conf={result.get('confidence', '?')}")
+
+
 # ============================================================
 # 2. evidence_builder 模块
 # ============================================================
@@ -335,6 +372,10 @@ def main():
     test_verifier_confidence_cross_check()
     test_verifier_v7_evidence_d_missing()
     test_verifier_v9_historical_reference()
+    # v2.2.1 新增 V8 三组 fixture
+    test_verifier_v8_timeline_conflict_high_fails()
+    test_verifier_v8_timeline_closed_high_passes()
+    test_verifier_v8_timeline_conflict_low_passes()
 
     print("\n[2] Evidence Builder 模块")
     test_evidence_builder_validate()
